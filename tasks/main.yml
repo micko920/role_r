@@ -1,0 +1,272 @@
+---
+- include_tasks: is_systemd.yml
+
+# Variable configuration.
+- include_tasks: variables.yml
+
+- name: Get installed version.
+  command:  R --version
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  register: r_installed_version
+
+    # The \s\S regex allows the match of any character and also \n 'newline'.
+    # This is to allow the complete match to the end a string with embedded '\n'.
+    # Normal '.*' does not match '\n'
+- name: Flag new installation
+  set_fact:
+    new_r_build: true
+  when:
+    - (r_installed_version.rc != 0) or (r_installed_version.stdout | regex_replace("^R version ([0-9\.]+) [\s\S]*$", "\\1") is version(r_version, "!="))
+
+- name: Ensure R Script Python libraries are installed.
+  apt:
+    name: "{{ rscript_python_library }}"
+    state: present
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Ensure R Script packages are installed.
+  apt:
+    name: "{{ item }}"
+    install_recommends: no
+    state: present
+  loop: "{{ rscript_packages }}"
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Ensure R Script build packages are installed.
+  apt:
+    name: "{{ item }}"
+    install_recommends: no
+    state: present
+  register: apt_installed_packages
+  loop: "{{ rscript_builddep_packages }}"
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Flag new apt build deps
+  set_fact:
+    new_r_builddeps: apt_installed_packages
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+# - name: show the result
+#   debug:
+#     msg: "{{ item.invocation }}"
+#   loop: "{{ apt_installed_packages.results}}"
+
+- name: Ensure workspace exists
+  file:
+    path: "/root/workspace"
+    state: directory
+    mode: 0700
+    recurse: true
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Get the source bundle
+  unarchive:
+    src: "{{ r_url }}"
+    remote_src: true
+    dest: "/root/workspace"
+    mode: 0755
+  register: install_r
+  until: install_r is succeeded
+  retries: 3
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Configure
+  command:
+    chdir: "{{ r_workspace }}"
+    argv:
+      - ./configure
+      - --enable-R-shlib
+      - --enable-memory-profiling
+      - --with-readline
+      - --with-blas
+      - --with-tcltk
+      - --disable-nls
+      - --with-recommended-packages
+  environment:
+    R_PAPERSIZE: a4
+    R_BATCHSAVE: --no-save --no-restore
+    R_BROWSER: xdg-open
+    PAGER: /usr/bin/pager
+    PERL: /usr/bin/perl
+    R_UNZIPCMD: /usr/bin/unzip
+    R_ZIPCMD: /usr/bin/zip
+    R_PRINTCMD: /usr/bin/lpr
+    LIBnn: lib
+    AWK: /usr/bin/awk
+    CFLAGS: -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g
+    CXXFLAGS: -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Build
+  make:
+    chdir: "{{ r_workspace }}"
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Install
+  make:
+    chdir: "{{ r_workspace }}"
+    target: install
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+  ## Add a library directory (for user-installed packages)
+- name: User Lib directory
+  file:
+    path: "/usr/local/lib/R/site-library"
+    state: directory
+    mode: g+ws
+    owner: root
+    group: staff
+    recurse: true
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Fix User Library path
+  lineinfile:
+    path: /usr/local/lib/R/etc/Renviron
+    regexp: '^R_LIBS_USER=.*$'
+    line: R_LIBS_USER=${R_LIBS_USER-'/usr/local/lib/R/site-library'}
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Fix Library path
+  lineinfile:
+    path: /usr/local/lib/R/etc/Renviron
+    regexp: '^R_LIBS=.*$'
+    line: R_LIBS=\${R_LIBS-'/usr/local/lib/R/library:/usr/lib/R/library'}
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Set configured env CRAN mirror
+  lineinfile:
+    path: /etc/environment
+    regexp: '^MRAN=.*$'
+    line: "MRAN={{ r_mran }}"
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Add R profile option for configured CRAN mirror
+  lineinfile:
+    path: /usr/local/lib/R/etc/Rprofile.site
+    regexp: '^MRAN=.*$'
+    line: "options(repos = c(CRAN='{{ r_mran }}'), download.file.method = 'libcurl')"
+    create: yes
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Install R packages from CRAN
+  command:
+    argv:
+      - Rscript
+      - --slave
+      - --no-save
+      - --no-restore-history
+      - -e
+      - "if (! ('{{item}}' %in% installed.packages()[,'Package'])) install.packages(pkgs='{{item}}', repo = '{{ r_cran }}')"
+  register: r_output
+  with_items: "{{ rscript_r_packages_cran }}"
+  changed_when: r_output.stderr is search('DONE (' ~ item ~ ')')
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Install other R packages
+  command:
+    argv:
+      - Rscript
+      - --slave
+      - --no-save
+      - --no-restore-history
+      - -e
+      - "if (! ('{{item}}' %in% installed.packages()[,'Package'])) install.packages(pkgs='{{item}}')"
+  register: r_output
+  with_items: "{{ rscript_r_packages }}"
+  changed_when: r_output.stderr is search('DONE (' ~ item ~ ')')
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: setup links
+  file:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    state: link
+  loop:
+    - { src: '/usr/local/lib/R/library/littler/examples/install2.r', dest: '/usr/local/bin/install2.r' }
+    - { src: '/usr/local/lib/R/library/littler/examples/installGithub.r', dest: '/usr/local/bin/installGithub.r' }
+    - { src: '/usr/local/lib/R/library/littler/bin/r',  dest: '/usr/local/bin/r' }
+  loop_control:
+    label: "{{ item.dest }}"
+  when:
+    - new_r_build is defined
+    - new_r_build
+
+- name: Flag new installation complete
+  set_fact:
+    new_r_build: false
+
+- name: Remove workspace
+  file:
+    path: "/root/workspace"
+    state: absent
+  when:
+    - new_r_build is defined
+    - not new_r_build
+
+- name: Remove build deps packages which were installed.
+  apt:
+    name: "{{ item.item }}"
+    install_recommends: no
+    state: absent
+    purge: yes
+  loop: "{{ apt_installed_packages.results}}"
+  loop_control:
+    label: "{{ item.item }}"
+  when:
+    - new_r_build is defined
+    - not new_r_build
+    - item is defined
+    - item.changed
+
+- name: Remove build packages from the cache
+  apt:
+    autoclean: yes
+
+- name: Remove dependencies that are no longer required
+  apt:
+    autoremove: yes
+
+# Could not do this with file as there is not easy glob method in file
+  # && rm -rf /var/lib/apt/lists/*
+# - name: remove cache files from list
+#   shell: rm -rf /var/lib/apt/lists/*
+#   args:
+#     executable: /bin/bash
+#     warn: false
+#   when:
+#     - new_r_build is defined
+#     - not new_r_build
