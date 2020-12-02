@@ -31,8 +31,10 @@ rscript_builddep_packages:
 
 rscript_packages:
   - enchant
-  - graphviz
   - ttf-dejavu
+
+graphviz_packages:
+  - "http://archive.ubuntu.com/ubuntu/pool/main/g/graphviz/graphviz_2.38.0-12ubuntu2_amd64.deb"
 
 rscript_python_library: []
 

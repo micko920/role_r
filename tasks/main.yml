@@ -38,6 +38,15 @@
     - new_r_build is defined
     - new_r_build
 
+- name: Ensure Graphviz packages are installed.
+  apt:
+    deb: "{{ item }}"
+    state: present
+  loop: "{{ graphviz_packages }}"
+  when:
+    - new_r_build is defined
+    - new_r_build
+
 - name: Ensure R Script build packages are installed.
   apt:
     name: "{{ item }}"
