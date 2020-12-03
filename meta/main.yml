@@ -1,7 +1,7 @@
 ---
 galaxy_info:
   author: Michael Green
-  description: R script for linux
+  description: Graphviz for linux
   company: EAS
 
   # If the issue tracker for your role is not on github, uncomment the

@@ -1,66 +1,65 @@
 ---
-rscript_builddep_packages:
+graphviz_builddep_packages:
   - curl
-  - default-jdk
-  - libbz2-dev
-  - libcairo2-dev
-  - libcurl4-openssl-dev
-  - libicu-dev
-  - libjpeg-dev
-  - liblzma-dev
-  - libpango1.0-dev
-  - libpcre3-dev
-  - libpng-dev
-  - libreadline-dev
-  - libtiff5-dev
-  - libx11-dev
-  - libxt-dev
-  - perl
-  - tcl8.6-dev
-  - texinfo
-  - texlive-extra-utils
-  - texlive-fonts-extra
-  - texlive-fonts-recommended
-  - texlive-latex-recommended
-  - tk8.6-dev
-  - x11proto-core-dev
-  - xauth
-  - xfonts-base
-  - xvfb
+  - debhelper-compat
+  - dh-python
+  - tk-dev
+  - tcl-dev
+  - libfreetype6-dev
   - zlib1g-dev
+  - libjpeg-dev
+  - libpng-dev
+  - libxaw7-dev
+  - bison
+  - flex
+  - libexpat1-dev
+  - libfontconfig1-dev
+  - swig
+  - libperl-dev
+  - libgd-dev
+  - guile-2.2-dev
+  - groff-base
+  - ghostscript
+  - lua5.2
+  - liblua5.2-dev
+  - ruby
+  - ruby-dev
+  - libargon2-dev
+  - libsodium-dev
+  - libxml2-dev
+  - php-dev
+  - python3-dev
+  - libcairo2-dev
+  - libpango1.0-dev
+  - d-shlibs
+  - chrpath
+  - libgtk2.0-dev
+  - libgts-dev
+  - libann-dev
+  - librsvg2-dev
+  - libwebp-dev
 
-rscript_packages:
-  - enchant
-  - ttf-dejavu
 
 graphviz_packages:
-  - "http://archive.ubuntu.com/ubuntu/pool/main/g/graphviz/graphviz_2.38.0-12ubuntu2_amd64.deb"
+  - libcdt5
+  - libcgraph6
+  - libgv-guile
+  - libgv-lua
+  - libgv-perl
+  - libgv-php7
+  - libgv-ruby
+  - libgv-tcl
+  - libgvc6
+  - libgvc6-plugins-gtk
+  - libgvpr2
+  - liblab-gamut1
+  - libpathplan4
+  - python3-gv
 
-rscript_python_library: []
+graphviz_python_library: []
 
-rscript_r_packages_cran:
-  - littler
-  - docopt
+graphviz_version: "2.44.1"
 
+graphviz_url: "https://www2.graphviz.org/Packages/stable/portable_source/graphviz-{{ graphviz_version }}.tar.gz"
+graphviz_workspace: "/root/workspace/graphviz-{{ graphviz_version }}"
 
-rscript_r_packages:
-  - rmarkdown
-  - dplyr
-  - ggplot2
-  - ggpubr
-  - codetools
-  - kintr
-
-build_date: "2020-04-24"
-r_version: "3.6.3"
-r_cran: "https://cran.rstudio.com"
-r_LC_ALL: "en_US.UTF-8"
-r_LANG: "en_US.UTF-8"
-r_TERM: "xterm"
-
-r_url: "https://cran.r-project.org/src/base/R-3/R-{{ r_version }}.tar.gz"
-r_workspace: "/root/workspace/R-{{ r_version }}"
-
-# if no date then just use CRAN
-# r_mran:  {{ r_cran }}
-r_mran:  "https://mran.microsoft.com/snapshot/{{ build_date }}"
