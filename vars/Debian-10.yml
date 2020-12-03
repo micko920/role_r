@@ -31,7 +31,6 @@ rscript_builddep_packages:
 
 rscript_packages:
   - enchant
-  - graphviz
   - ttf-dejavu
 
 rscript_python_library: []
