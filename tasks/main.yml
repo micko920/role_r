@@ -97,6 +97,7 @@
       - --disable-nls
       - --with-recommended-packages
   environment:
+    TMPDIR: /var/tmp
     R_PAPERSIZE: a4
     R_BATCHSAVE: --no-save --no-restore
     R_BROWSER: xdg-open
@@ -179,6 +180,8 @@
     - new_r_build
 
 - name: Install R packages from CRAN
+  environment:
+    TMPDIR: /var/tmp
   command:
     argv:
       - Rscript
@@ -195,6 +198,8 @@
     - new_r_build
 
 - name: Install other R packages
+  environment:
+    TMPDIR: /var/tmp
   command:
     argv:
       - Rscript
