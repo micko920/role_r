@@ -179,6 +179,9 @@
     - new_r_build is defined
     - new_r_build
 
+# This is not reporting install errors. IN particular the tmp noexec
+# error. Which is reported as configure exists but is not executable.
+# Todo: Add error reporting
 - name: Install R packages from CRAN
   environment:
     TMPDIR: /var/tmp
@@ -197,6 +200,7 @@
     - new_r_build is defined
     - new_r_build
 
+# Todo: Add error reporting
 - name: Install other R packages
   environment:
     TMPDIR: /var/tmp
