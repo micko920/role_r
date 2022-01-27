@@ -30,8 +30,8 @@ rscript_builddep_packages:
   - zlib1g-dev
 
 rscript_packages:
-  - enchant
-  - ttf-dejavu
+  - enchant-2
+  - fonts-dejavu
 
 rscript_python_library: []
 
