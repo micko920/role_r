@@ -9,25 +9,9 @@ dependency:
 driver:
   name: docker
 platforms:
-  - name: "homelab-systemd-local-${role_under_test:-norole}"
-    image: "${MOLECULE_DOCKER_SYSTEMD_IMAGE:-homelab-systemd:local}"
-    command: "/sbin/init"
-    tmpfs:
-      - /run
-      - /run/lock
-      - /tmp
-    exposed_ports:
-      - 80
-      - 443
-      - 3838
-      - 8080
-      - 8787
-      - 9090
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+  - name: homelab-local
+    image: homelab:local
     pre_build_image: true
-    capabilities:
-      - SYS_ADMIN
 provisioner:
   name: ansible
   inventory:
@@ -36,3 +20,19 @@ provisioner:
         ansible_python_interpreter: /usr/bin/python3
 verifier:
   name: testinfra
+scenario:
+  # Do nother with this docker test. Normally means it will not work in docker
+  create_sequence:
+    - dependency
+  check_sequence:
+    - dependency
+    - cleanup
+  converge_sequence:
+    - dependency
+  destroy_sequence:
+    - dependency
+    - cleanup
+  test_sequence:
+    - lint
+    - dependency
+    - cleanup

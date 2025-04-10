@@ -4,8 +4,3 @@
   become: true
   vars_files:
     - ../env.yml
-  vars:
-    service_mgr_use: "systemd"
-
-  roles:
-    - role: "{{ role_under_test }}"
